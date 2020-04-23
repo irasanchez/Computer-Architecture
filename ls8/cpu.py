@@ -65,8 +65,8 @@ class CPU:
         """Run the CPU."""
         pass
 
-    def ram_read(address):
-        return self.ram[address]
+    def ram_read(mar):  # mar = address; mdr = value per readme
+        return self.ram[mar]
 
-    def ram_write():
-        pass
+    def ram_write(mar, mdr):
+        self.ram[mar] = mdr
