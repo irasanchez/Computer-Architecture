@@ -10,6 +10,8 @@ class CPU:
         """Construct a new CPU."""
         self.ram = [0] * 32
         self.reg = [0] * 8
+        self.pc = 0
+        self.opcodes = {}
 
     def load(self):
         """Load a program into memory."""
@@ -61,12 +63,37 @@ class CPU:
 
         print()
 
-    def ram_read(mar):  # mar = address; mdr = value per readme
-        return self.ram[mar]
-
-    def ram_write(mar, mdr):
-        self.ram[mar] = mdr
-
     def run(self):
         """Run the CPU."""
-        pass
+        IR = self.ram_read(self.pc)
+        operand_a = self.ram_read(self.pc+1)
+        operand_b = self.ram_read(self.pc+2)
+        print("&&&&&&&", bin(IR), operand_a, operand_b)
+
+        # may need some decode logic see Execution Sequence
+        run = True
+        HLT = None
+
+        # while run:
+        # LDI
+        if IR is 0b10000010:
+            # Set the value of a register to an integer.
+            self.reg[operand_a] = operand_b
+
+        # ADD is done by ALU
+        print(self.alu(IR, operand_a, operand_b))
+
+        # AND is done by ALU
+
+        # CALL
+        # if HLT
+        # halt the CPU
+        # exit the emulator
+        #    pass
+
+    def ram_read(self, mar):
+        # mar = address; mdr = value per readme
+        return self.ram[mar]
+
+    def ram_write(self, mar, mdr):
+        self.ram[mar] = mdr
