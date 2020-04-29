@@ -2,6 +2,10 @@
 
 import sys
 
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
+
 
 class CPU:
     """Main CPU class."""
@@ -11,10 +15,10 @@ class CPU:
         self.ram = [0] * 32
         self.reg = [0] * 8
         self.pc = 0
-        self.opcodes = {}
 
     def load(self):
         """Load a program into memory."""
+        print("Loading program...")
 
         address = 0
 
@@ -23,10 +27,10 @@ class CPU:
         program = [
             # From print8.ls8
             0b10000010,  # LDI R0,8
-            0b00000000,  # NOP
+            0b00000000,
             0b00001000,
             0b01000111,  # PRN R0
-            0b00000000,  # NOP
+            0b00000000,
             0b00000001,  # HLT
         ]
 
@@ -34,7 +38,7 @@ class CPU:
             self.ram[address] = instruction
             address += 1
 
-    def alu(self, op, reg_a, reg_b):  # 🤖 ALU
+    def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
@@ -65,30 +69,35 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        IR = self.ram_read(self.pc)
-        operand_a = self.ram_read(self.pc+1)
-        operand_b = self.ram_read(self.pc+2)
-        print("&&&&&&&", bin(IR), operand_a, operand_b)
+        self.load()
 
         # may need some decode logic see Execution Sequence
-        run = True
-        HLT = None
 
-        # while run:
-        # LDI
-        if IR is 0b10000010:
-            # Set the value of a register to an integer.
-            self.reg[operand_a] = operand_b
+        while True:
+            IR = self.ram_read(self.pc)
+            operand_a = self.ram_read(self.pc+1)
+            operand_b = self.ram_read(self.pc+2)
+            print("&&&&&&&", bin(IR), operand_a, operand_b)
 
+            if IR == HLT:
+                print("Exit")
+                break
+            # LDI
+            if IR == LDI:
+                # Set the value of a register to an integer.
+                print("is ldi")
+                self.reg[operand_a] = operand_b
+                print(self.reg)
+                self.pc += 3
+            if IR == PRN:
+                print(self.reg[operand_a])
+                self.pc += 2
         # ADD is done by ALU
-        print(self.alu(IR, operand_a, operand_b))
+        # print(self.alu(IR, operand_a, operand_b))
 
         # AND is done by ALU
 
         # CALL
-        # if HLT
-        # halt the CPU
-        # exit the emulator
         #    pass
 
     def ram_read(self, mar):
