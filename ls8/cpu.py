@@ -5,6 +5,7 @@ import sys
 LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
+MUL = 0b10100010
 
 
 class CPU:
@@ -16,33 +17,33 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
 
-    def load(self):
+    def load(self, filename):
         """Load a program into memory."""
         print("Loading program...")
+        try:
+            address = 0
+            with open(filename) as file:
+                for line in file:
+                    comment_split = line.split("#")
+                    number_string = comment_split[0].strip()
+                    if number_string == '':
+                        continue
+                    num = int(number_string, 2)
 
-        address = 0
-
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+                    self.ram[address] = num
+                    address += 1
+        except FileNotFoundError:
+            print(f'{sys.argv[0]}: could not find {sys.argv[1]}')
+            sys.exit(2)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        if op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
+
         # elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -65,11 +66,8 @@ class CPU:
         for i in range(8):
             print(" %02X" % self.reg[i], end='')
 
-        print()
-
     def run(self):
         """Run the CPU."""
-        self.load()
 
         # may need some decode logic see Execution Sequence
 
@@ -77,7 +75,6 @@ class CPU:
             IR = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc+1)
             operand_b = self.ram_read(self.pc+2)
-            print("&&&&&&&", bin(IR), operand_a, operand_b)
 
             if IR == HLT:
                 print("Exit")
@@ -85,13 +82,17 @@ class CPU:
             # LDI
             if IR == LDI:
                 # Set the value of a register to an integer.
-                print("is ldi")
+
                 self.reg[operand_a] = operand_b
-                print(self.reg)
+
                 self.pc += 3
             if IR == PRN:
                 print(self.reg[operand_a])
                 self.pc += 2
+            if IR == MUL:
+                self.alu("MUL", operand_a, operand_b)
+                self.pc += 3
+
         # ADD is done by ALU
         # print(self.alu(IR, operand_a, operand_b))
 
