@@ -2,11 +2,6 @@
 
 import sys
 
-LDI = 0b10000010
-PRN = 0b01000111
-HLT = 0b00000001
-MUL = 0b10100010
-
 
 class CPU:
     """Main CPU class."""
@@ -16,6 +11,13 @@ class CPU:
         self.ram = [0] * 32
         self.reg = [0] * 8
         self.pc = 0
+        self.reg = 0xF4  # hexcode f4
+        self.opcodes = {
+            LDI: 0b10000010
+            PRN: 0b01000111
+            HLT: 0b00000001
+            MUL: 0b10100010
+        }
 
     def load(self, filename):
         """Load a program into memory."""
@@ -80,16 +82,16 @@ class CPU:
                 print("Exit")
                 break
             # LDI
-            if IR == LDI:
+            if self.opcodes.IR == LDI:
                 # Set the value of a register to an integer.
 
                 self.reg[operand_a] = operand_b
 
                 self.pc += 3
-            if IR == PRN:
+            if self.opcodes.IR == PRN:
                 print(self.reg[operand_a])
                 self.pc += 2
-            if IR == MUL:
+            if self.opcodes.IR == MUL:
                 self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
 
