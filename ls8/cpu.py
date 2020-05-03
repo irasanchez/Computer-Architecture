@@ -8,9 +8,12 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
+        self.count = 0
+        self.running = False
+        self.pc = 0x00
         self.ram = [0] * 256
+        self.fl = [8] * 8
         self.reg = [0] * 8
-        self.pc = 0
         self.reg[7] = 0xF4  # hexcode
         self.opcodes = {
             # this key value order allows us to pass in operands to find the instruction
@@ -22,7 +25,11 @@ class CPU:
             0b01000110: "POP",
             0b01010000: "CALL",
             0b00010001: "RET",
-            0b10100000: "ADD"
+            0b10100000: "ADD",
+            0b10100111: "CMP",
+            0b01010100: "JUMP",
+            0b01010101: "JEQ",
+            0b01010110: "JNE"
         }
         self.branchtable = {
             "HLT": self.hlt,
@@ -32,8 +39,10 @@ class CPU:
             "POP": self.pop,
             "CALL": self.call,
             "RET": self.ret,
+            "JUMP": self.jump,
+            "JEQ": self.jeq,
+            "JNE": self.jne
         }
-        self.running = False
 
     def load(self, filename):
         """Load a program into memory."""
@@ -62,6 +71,24 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "CMP":
+            a = self.reg[reg_a]
+            b = self.reg[reg_b]
+
+            if a == b:
+                self.fl[-1] = 1  # E flag on
+            else:
+                self.fl[-1] = 0  # E flag off
+
+            if a > b:
+                self.fl[-2] = 1  # L flag on
+            else:
+                self.fl[-2] = 0  # L flag off
+
+            if a < b:
+                self.fl[-3] = 1  # G flag on
+            else:
+                self.fl[-3] = 0  # G flag off
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -71,7 +98,7 @@ class CPU:
         from run() if you need help debugging.
         """
 
-        print(f"TRACE: %02X | %02X %02X %02X |" % (
+        print(f"\n\nTRACE: %02X | %02X %02X %02X |" % (
             self.pc,
             # self.fl,
             # self.ie,
@@ -96,12 +123,18 @@ class CPU:
         self.running = True
 
         while self.running:
+            self.count += 1
             IR = self.ram_read(self.pc)
-            operand_a = self.ram_read(self.pc+1)
-            operand_b = self.ram_read(self.pc+2)
+
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+
+            # self.count += 1
+            # print(bin(operand_a))
+            # self.count += 1
+            # print(bin(operand_b))
 
             # isolate first 2 digits
-            # always going to be 8 digits long for 8 bits
             num_operands = (IR >> 6)
 
             # AABCDDDD
@@ -123,19 +156,20 @@ class CPU:
                 self.branchtable[opcode](operand_a, operand_b)
 
     def hlt(self, _, __):
-        self.running = False  # can also do sys.exit(0) instead
+        print("HALTING")
+        self.running = False  # can also do sys.exit instead
 
     def prn(self, operand_a, _):
-        print(self.reg[operand_a])
+        print("PRINTING ==>", self.reg[operand_a])
 
     def ldi(self, operand_a, operand_b):
         self.reg[operand_a] = operand_b
 
     def push(self, operand_a, _):  # "bury" in Turing's version
-        self.reg[7] -= 1
-        sp = self.reg[7]
-        value = self.reg[operand_a]
-        self.ram_write(sp, value)
+        self.reg[7] -= 1  # update sp
+        sp = self.reg[7]  # new sp
+        value = self.reg[operand_a]  # copy value from reg
+        self.ram_write(sp, value)  # write it to memory
 
     def pop(self, operand_a, _):
         sp = self.reg[7]
@@ -146,9 +180,24 @@ class CPU:
         self.reg[7] -= 1
         sp = self.reg[7]
         self.ram_write(sp, self.pc + 2)
-        self.pc = self.reg[operand_a]
+        self.jump(operand_a, _)
 
     def ret(self, operand_a, _):
         sp = self.reg[7]
         return_address = self.ram_read(sp)
         self.pc = return_address
+
+    def jump(self, operand_a, _):
+        self.pc = self.reg[operand_a]
+
+    def jeq(self, operand_a, _):
+        if self.fl[-1] == 1:  # E flag
+            self.jump(operand_a, _)
+        else:
+            self.pc += 2
+
+    def jne(self, operand_a, _):
+        if self.fl[-1] == 0:  # E flag
+            self.jump(operand_a, _)
+        else:
+            self.pc += 2
