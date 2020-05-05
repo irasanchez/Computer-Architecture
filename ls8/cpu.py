@@ -80,12 +80,12 @@ class CPU:
             else:
                 self.fl[-1] = 0  # E flag off
 
-            if a > b:
+            if a < b:
                 self.fl[-2] = 1  # L flag on
             else:
                 self.fl[-2] = 0  # L flag off
 
-            if a < b:
+            if a > b:
                 self.fl[-3] = 1  # G flag on
             else:
                 self.fl[-3] = 0  # G flag off
@@ -128,11 +128,6 @@ class CPU:
 
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
-
-            # self.count += 1
-            # print(bin(operand_a))
-            # self.count += 1
-            # print(bin(operand_b))
 
             # isolate first 2 digits
             num_operands = (IR >> 6)
